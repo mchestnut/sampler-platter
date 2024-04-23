@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { ref } from 'vue';
+
 const props = defineProps<{
   players: Player[];
   round: number;
@@ -11,6 +13,7 @@ const emit = defineEmits<{
 /** Prevent an infinite loop in assignment. */
 let loopIteration = 0;
 const loopThreshold = 500;
+const isFailure = ref(false);
 
 const updatePlayerTable = (event: Event, player: Player) => {
   if (!(event.target instanceof HTMLInputElement)) return;
@@ -29,11 +32,11 @@ const getRandomizedLists = (players: Player[]) => {
  */
 const assignListToPlayer = (player: Player, opponent: Player, remainingLists: string[]) => {
   const availableLists = remainingLists.filter((list) => {
-    return (
-      list !== player.ownedListName &&
-      !player.assignedLists.includes(list) &&
-      list !== opponent.ownedListName
-    );
+    const isOwnedList = list === player.ownedListName;
+    const isOpponentList = list === opponent.ownedListName;
+    const hasPlayedList = player.assignedLists.includes(list);
+
+    return !isOwnedList && !isOpponentList && !hasPlayedList;
   });
 
   if (availableLists.length === 0) return null;
@@ -56,10 +59,13 @@ const assignListsToPlayers = (roundPairings: Pairing[]) => {
   // If we've tried too many times, stop.
   if (loopIteration >= loopThreshold) {
     console.error('Could not assign lists to players.');
+    isFailure.value = true;
     return;
   } else {
     loopIteration++;
   }
+
+  const randomizedLists = getRandomizedLists(props.players);
 
   const randomizedAnchorLists = getRandomizedLists(
     props.players.filter((player) => player.isAnchor)
@@ -73,22 +79,24 @@ const assignListsToPlayers = (roundPairings: Pairing[]) => {
   const assignedLists: Record<string, string> = {};
 
   for (const pairing of roundPairings) {
-    let player1List = assignListToPlayer(pairing.player1, pairing.player2, randomizedAnchorLists);
-    let player2List = assignListToPlayer(pairing.player2, pairing.player1, randomizedFloatingLists);
+    let player1List = assignListToPlayer(pairing.player1, pairing.player2, randomizedLists);
+    let player2List = assignListToPlayer(pairing.player2, pairing.player1, randomizedLists);
+
+    // let player1List = assignListToPlayer(pairing.player1, pairing.player2, randomizedAnchorLists);
+    // let player2List = assignListToPlayer(pairing.player2, pairing.player1, randomizedFloatingLists);
 
     // If we run out of lists, try assigning player 2 as anchor instead.
-    if (!player1List || !player2List) {
-      console.log('Flip anchor and floating lists.');
-      player1List = assignListToPlayer(pairing.player1, pairing.player2, randomizedFloatingLists);
-      player2List = assignListToPlayer(pairing.player2, pairing.player1, randomizedAnchorLists);
+    // if (!player1List || !player2List) {
+    //   player1List = assignListToPlayer(pairing.player1, pairing.player2, randomizedFloatingLists);
+    //   player2List = assignListToPlayer(pairing.player2, pairing.player1, randomizedAnchorLists);
 
-      // If we still can't find a list, start pairings over.
-      if (!player1List || !player2List) {
-        console.log('Starting over.');
-        assignListsToPlayers(roundPairings);
-        return;
-      }
+    // If we still can't find a list, start pairings over.
+    if (!player1List || !player2List) {
+      console.log('Starting over.');
+      assignListsToPlayers(roundPairings);
+      return;
     }
+    // }
 
     assignedLists[pairing.player1.playerName] = player1List;
     assignedLists[pairing.player2.playerName] = player2List;
@@ -122,7 +130,14 @@ const createPairings = (): Pairing[] => {
 const onNext = () => {
   const roundPairings = createPairings();
   assignListsToPlayers(roundPairings);
-  emit('next', roundPairings);
+
+  if (!isFailure.value) emit('next', roundPairings);
+};
+
+const onRetry = () => {
+  isFailure.value = false;
+  loopIteration = 0;
+  onNext();
 };
 </script>
 
@@ -142,7 +157,13 @@ const onNext = () => {
           </td>
         </tr>
       </table>
-      <button type="button" @click="onNext">Assign Lists</button>
+      <div v-if="!isFailure">
+        <button type="button" @click="onNext">Assign Lists</button>
+      </div>
+      <div v-else>
+        Could not assign lists to players.
+        <button type="button" @click="onRetry">Retry</button>
+      </div>
     </div>
   </section>
 </template>

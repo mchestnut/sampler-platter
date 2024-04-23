@@ -120,10 +120,10 @@ const onNext = () => {
           <span>List Name</span>
           <input v-model="ownedListNameModel" />
         </label>
-        <label>
+        <!-- <label>
           <span>Anchor Fleet</span>
           <input type="checkbox" v-model="isAnchorModel" />
-        </label>
+        </label> -->
       </form>
       <button type="button" @click="addPlayer">Add Player</button>
     </div>
@@ -135,18 +135,19 @@ const onNext = () => {
           <tr>
             <th>Player Name</th>
             <th>Owned List</th>
-            <th>Anchor</th>
+            <!-- <th>Anchor</th> -->
             <th class="hidden-column"></th>
           </tr>
           <tr v-if="players.length === 0">
-            <td colspan="3" class="centered-text">No players yet</td>
+            <!-- <td colspan="3" class="centered-text">No players yet</td> -->
+            <td colspan="2" class="centered-text">No players yet</td>
           </tr>
           <tr v-for="player in players" :key="player.playerName">
             <td>{{ player.playerName }}</td>
             <td>{{ player.ownedListName }}</td>
-            <td class="centered-text">
+            <!-- <td class="centered-text">
               <div v-if="player.isAnchor" v-html="IconCheck" title="Yes" class="icon"></div>
-            </td>
+            </td> -->
             <td class="hidden-column">
               <button class="delete-button" @click="() => onDelete(player)">
                 <div v-html="IconTrash" title="Remove" class="icon"></div>

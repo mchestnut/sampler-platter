@@ -1,0 +1,63 @@
+@import './base.css';
+
+:root {
+  --border: 1px solid #ccc;
+  --border-radius: 4px;
+}
+
+section {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+table {
+  border-collapse: collapse;
+
+  th {
+    font-weight: bold;
+  }
+
+  th,
+  td {
+    padding: 0.25rem 1rem;
+    border: var(--border);
+  }
+}
+
+input {
+  padding: 0.5rem 1rem;
+  border: var(--border);
+  border-radius: var(--border-radius);
+
+  &[type='number'] {
+    width: 4rem;
+
+    /* Disable arrow buttons */
+    -webkit-appearance: none;
+    -moz-appearance: textfield;
+
+    &::-webkit-inner-spin-button,
+    &::-webkit-outer-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+  }
+}
+
+button {
+  font-weight: bold;
+  width: 8rem;
+  margin-top: 1rem;
+  padding: 0.25rem 0.5rem;
+  border: var(--border);
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  background-color: #eee;
+  transition: all 200ms;
+
+  &:focus,
+  &:hover {
+    background-color: #ddd;
+  }
+}

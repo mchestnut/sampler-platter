@@ -11,7 +11,8 @@ const emit = defineEmits<{
 }>();
 
 /** Prevent an infinite loop in assignment. */
-let loopIteration = 0;
+let retryIteration = 1;
+let loopIteration = 1;
 const loopThreshold = 500;
 const isFailure = ref(false);
 
@@ -28,7 +29,8 @@ const getRandomizedLists = (players: Player[]) => {
 
 /**
  * Assigns a list to the player by filtering out that player's owned list, any
- * lists that they have played, and their opponent's list.
+ * lists that they have played, and their opponent's list. On the third retry,
+ * allow players to play against their own lists.
  */
 const assignListToPlayer = (player: Player, opponent: Player, remainingLists: string[]) => {
   const availableLists = remainingLists.filter((list) => {
@@ -36,7 +38,11 @@ const assignListToPlayer = (player: Player, opponent: Player, remainingLists: st
     const isOpponentList = list === opponent.ownedListName;
     const hasPlayedList = player.assignedLists.includes(list);
 
-    return !isOwnedList && !isOpponentList && !hasPlayedList;
+    if (retryIteration < 3) {
+      return !isOwnedList && !isOpponentList && !hasPlayedList;
+    } else {
+      return !isOwnedList && !hasPlayedList;
+    }
   });
 
   if (availableLists.length === 0) return null;
@@ -58,7 +64,6 @@ const assignListToPlayer = (player: Player, opponent: Player, remainingLists: st
 const assignListsToPlayers = (roundPairings: Pairing[]) => {
   // If we've tried too many times, stop.
   if (loopIteration >= loopThreshold) {
-    console.error('Could not assign lists to players.');
     isFailure.value = true;
     return;
   } else {
@@ -92,7 +97,6 @@ const assignListsToPlayers = (roundPairings: Pairing[]) => {
 
     // If we still can't find a list, start pairings over.
     if (!player1List || !player2List) {
-      console.log('Starting over.');
       assignListsToPlayers(roundPairings);
       return;
     }
@@ -135,8 +139,9 @@ const onNext = () => {
 };
 
 const onRetry = () => {
+  retryIteration++;
+  loopIteration = 1;
   isFailure.value = false;
-  loopIteration = 0;
   onNext();
 };
 </script>
